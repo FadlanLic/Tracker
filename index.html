@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05060f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Menuju S2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="apple-touch-icon.png">
+<title>Menuju S2 — Readiness Tracker</title>
+<style>
+  :root{
+    --bg1:#05060f; --bg2:#0b0e24; --nebula1:rgba(124,58,237,.28); --nebula2:rgba(37,99,235,.22);
+    --glass:rgba(255,255,255,.06); --glass-b:rgba(255,255,255,.12);
+    --text:#eaeaf7; --muted:#9a9cc2; --accent:#a78bfa; --accent2:#60a5fa; --gold:#fcd34d; --ok:#6ee7b7; --danger:#fb7185;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%}
+  body{
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(ellipse 70% 50% at 15% 0%, var(--nebula1), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 20%, var(--nebula2), transparent 60%),
+      radial-gradient(ellipse 80% 60% at 50% 110%, rgba(168,85,247,.18), transparent 60%),
+      linear-gradient(180deg,var(--bg2),var(--bg1) 70%);
+    background-attachment:fixed;
+    line-height:1.55;
+  }
+  #stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+  .wrap{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:32px 16px 64px}
+  header{text-align:center;margin-bottom:28px}
+  header h1{font-size:clamp(1.6rem,4vw,2.3rem);font-weight:700;letter-spacing:.01em;
+    background:linear-gradient(90deg,#c4b5fd,#93c5fd,#fde68a);-webkit-background-clip:text;background-clip:text;color:transparent}
+  header p{color:var(--muted);margin-top:6px;font-size:.95rem}
+
+  .card{
+    background:var(--glass);border:1px solid var(--glass-b);border-radius:20px;padding:22px;
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+    margin-bottom:20px;
+  }
+  .card h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.16em;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+  /* North star */
+  .north{border-color:rgba(252,211,77,.25);box-shadow:0 10px 40px rgba(0,0,0,.35),0 0 60px rgba(167,139,250,.12)}
+  .north h2{color:var(--gold)}
+  #visionText{font-size:1.1rem;line-height:1.75;white-space:pre-wrap;color:#f3f0ff;font-style:italic}
+  #visionText.empty{color:var(--muted)}
+  textarea,input[type=text],input[type=datetime-local]{
+    width:100%;background:rgba(5,6,15,.55);color:var(--text);border:1px solid var(--glass-b);border-radius:12px;
+    padding:12px 14px;font:inherit;outline:none;transition:border-color .2s, box-shadow .2s;color-scheme:dark;
+  }
+  textarea{min-height:130px;resize:vertical}
+  textarea:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(167,139,250,.2)}
+
+  button{
+    font:inherit;cursor:pointer;border:1px solid var(--glass-b);background:rgba(255,255,255,.07);color:var(--text);
+    border-radius:10px;padding:7px 14px;font-size:.85rem;transition:all .2s;
+  }
+  button:hover{background:rgba(255,255,255,.14);transform:translateY(-1px)}
+  button.primary{background:linear-gradient(135deg,#7c3aed,#2563eb);border-color:transparent}
+  button.primary:hover{filter:brightness(1.12)}
+  button.ghost{background:transparent}
+  .hidden{display:none!important}
+  .actions{display:flex;gap:8px;margin-top:12px}
+
+  /* Countdown */
+  .count-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:6px 0 14px}
+  .unit{background:rgba(5,6,15,.45);border:1px solid var(--glass-b);border-radius:16px;padding:16px 6px;text-align:center}
+  .unit b{display:block;font-size:clamp(1.7rem,6vw,2.7rem);font-weight:700;font-variant-numeric:tabular-nums;
+    background:linear-gradient(180deg,#fff,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.1}
+  .unit span{font-size:.7rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+  #targetLabel{color:var(--muted);font-size:.9rem}
+  .date-edit{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .date-edit input{flex:1;min-width:200px;width:auto}
+  .reached{color:var(--gold);text-align:center;font-size:1.1rem;padding:10px 0}
+
+  /* Progress */
+  .pct{font-size:2rem;font-weight:700;color:var(--ok);font-variant-numeric:tabular-nums}
+  .bar{height:14px;background:rgba(5,6,15,.6);border:1px solid var(--glass-b);border-radius:99px;overflow:hidden;margin-top:6px}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#60a5fa,#6ee7b7);border-radius:99px;transition:width .6s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 14px rgba(96,165,250,.6)}
+  .sub{color:var(--muted);font-size:.85rem;margin-top:8px}
+
+  /* Categories */
+  .cat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+  .cat-head h3{font-size:1.05rem;font-weight:600}
+  .cat-meta{font-size:.8rem;color:var(--muted);white-space:nowrap}
+  .mini{height:5px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-bottom:12px}
+  .mini>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+  ul{list-style:none}
+  li.task{display:flex;align-items:center;gap:12px;padding:9px 6px;border-radius:10px;transition:background .15s}
+  li.task:hover{background:rgba(255,255,255,.05)}
+  li.task input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;flex:none;border:2px solid var(--accent);border-radius:7px;cursor:pointer;position:relative;transition:all .2s;background:transparent}
+  li.task input[type=checkbox]:checked{background:linear-gradient(135deg,#7c3aed,#2563eb);border-color:transparent;box-shadow:0 0 12px rgba(124,58,237,.6)}
+  li.task input[type=checkbox]:checked::after{content:"";position:absolute;left:6px;top:2px;width:6px;height:11px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  li.task label{flex:1;cursor:pointer;word-break:break-word;transition:color .2s}
+  li.task.done label{color:var(--muted);text-decoration:line-through}
+  .del{opacity:.45;padding:3px 9px;border-radius:8px;background:transparent;border-color:transparent;font-size:1rem}
+  li.task:hover .del,.del:focus{opacity:1}
+  .del:hover{color:var(--danger);background:rgba(251,113,133,.12)}
+  .add{display:flex;gap:8px;margin-top:12px}
+  .add input{flex:1}
+  .empty-note{color:var(--muted);font-size:.88rem;padding:6px}
+  footer{text-align:center;margin-top:28px;color:var(--muted);font-size:.8rem}
+  footer button{margin-top:10px}
+  @media(max-width:520px){.card{padding:18px}.count-grid{gap:8px}.unit{padding:12px 4px}}
+
+  /* Timeline & life weeks */
+  input[type=date],select{width:100%;background:rgba(5,6,15,.55);color:var(--text);border:1px solid var(--glass-b);border-radius:12px;padding:10px 12px;font:inherit;outline:none;color-scheme:dark}
+  input[type=date]:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(167,139,250,.2)}
+  select option{background:#0b0e24}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+  .tl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--glass-b);border-radius:16px;background:rgba(5,6,15,.45)}
+  .tl{position:relative;height:320px;min-width:100%}
+  .tl .axis{position:absolute;top:160px;height:3px;border-radius:3px}
+  .tl .axis.past{background:linear-gradient(90deg,#60a5fa,#a78bfa)}
+  .tl .axis.future{background:repeating-linear-gradient(90deg,rgba(167,139,250,.55) 0 8px,transparent 8px 14px)}
+  .tl .tick{position:absolute;top:0;bottom:0;border-left:1px dashed rgba(255,255,255,.08)}
+  .tl .tick span{position:absolute;bottom:6px;left:5px;font:11px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+  .tl .now{position:absolute;top:0;bottom:0;width:2px;background:#67e8f9;box-shadow:0 0 12px #67e8f9;z-index:1}
+  .tl .now span{position:absolute;top:6px;left:8px;white-space:nowrap;font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;background:rgba(5,6,15,.85);padding:3px 8px;border-radius:6px;color:#67e8f9}
+  .ev{position:absolute;top:0;height:100%;width:0;cursor:pointer;z-index:2}
+  .ev .stem{position:absolute;left:0;width:1px;background:currentColor;opacity:.65}
+  .ev .lbl{position:absolute;left:0;transform:translateX(-50%);width:128px;text-align:center;line-height:1.25;padding:2px 4px;border-radius:8px;background:rgba(5,6,15,.55)}
+  .ev .lbl b{display:block;font-weight:500;font-size:.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ev .lbl small{display:block;font:10.5px ui-monospace,Menlo,Consolas,monospace;color:currentColor}
+  .ev .star{position:absolute;left:0;top:161.5px;width:16px;height:16px;transform:translate(-50%,-50%);border:0;padding:0;border-radius:50%;background:currentColor;box-shadow:0 0 12px currentColor;transition:transform .2s}
+  .ev .star.goal{width:26px;height:26px;border-radius:0;box-shadow:none;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%)}
+  .ev .star:hover,.ev.sel .star{transform:translate(-50%,-50%) scale(1.3);background:currentColor}
+  .ev.sel .lbl{background:rgba(255,255,255,.12)}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:.82rem;color:var(--muted)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+  .detail{margin-top:14px;border:1px solid var(--glass-b);border-radius:16px;padding:16px;background:rgba(5,6,15,.45)}
+  .chip{display:inline-block;font-size:.72rem;padding:2px 10px;border-radius:99px;border:1px solid currentColor}
+  .evform{display:grid;gap:8px;margin-top:14px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+  /* Target timeline overrides */
+  li.task{flex-wrap:wrap}
+  li.task label{flex:1 1 150px}
+  input.due[type=date]{flex:none;width:auto;padding:5px 8px;font-size:.78rem;border-radius:9px;color:var(--muted)}
+  input.due.set{color:var(--text)}
+  input.due.late{border-color:#f472b6;color:#f472b6}
+  .tl{height:340px}
+  .tl .axis{top:170px}
+  .ev .star{top:171.5px}
+  .ev .star.goal{filter:drop-shadow(0 0 5px currentColor)}
+  .ev .star{color:inherit}
+  .ev .star.big{width:36px;height:36px}
+  .ev .lbl{width:120px}
+  .wrap{padding-top:max(32px,calc(env(safe-area-inset-top) + 16px));padding-bottom:max(64px,calc(env(safe-area-inset-bottom) + 32px))}
+  input.due[type=date]{font-size:16px}
+</style>
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+
+<div class="wrap">
+  <header>
+    <h1>✦ Perjalanan Menuju S2</h1>
+    <p>Satu langkah kecil setiap hari, menuju bintang yang kamu tuju.</p>
+  </header>
+
+  <!-- NORTH STAR -->
+  <section class="card north" aria-labelledby="nsTitle">
+    <div class="row">
+      <h2 id="nsTitle">★ The North Star — Mengapa Saya S2</h2>
+      <button id="visionEditBtn" class="ghost">✎ Edit</button>
+    </div>
+    <p id="visionText"></p>
+    <div id="visionEditor" class="hidden">
+      <textarea id="visionInput" placeholder="Tulis alasan dan visi besarmu…"></textarea>
+      <div class="actions">
+        <button id="visionSave" class="primary">Simpan</button>
+        <button id="visionCancel">Batal</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- COUNTDOWN -->
+  <section class="card" aria-labelledby="cdTitle">
+    <div class="row">
+      <h2 id="cdTitle">⏳ Hitung Mundur</h2>
+      <button id="dateEditBtn" class="ghost">📅 Ubah Tanggal</button>
+    </div>
+    <div id="countGrid" class="count-grid">
+      <div class="unit"><b id="cd-d">0</b><span>Hari</span></div>
+      <div class="unit"><b id="cd-h">00</b><span>Jam</span></div>
+      <div class="unit"><b id="cd-m">00</b><span>Menit</span></div>
+      <div class="unit"><b id="cd-s">00</b><span>Detik</span></div>
+    </div>
+    <div id="reached" class="reached hidden">✨ Tanggal target telah tiba. Semoga semuanya lancar!</div>
+    <div id="targetLabel"></div>
+    <div id="dateEditor" class="date-edit hidden">
+      <input type="datetime-local" id="dateInput" aria-label="Tanggal target">
+      <button id="dateSave" class="primary">Simpan</button>
+      <button id="dateCancel">Batal</button>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section class="card" aria-labelledby="tlTitle">
+    <div class="row">
+      <h2 id="tlTitle">🌌 Garis Waktu Target</h2>
+      <button id="autoBtn" class="ghost">✨ Susun jadwal otomatis</button>
+    </div>
+    <p class="sub" style="margin:0 0 12px">Setiap tugas di checklist yang punya tanggal menjadi bintang di sini. Ketuk bintang untuk detailnya. Geser ke samping di layar kecil.</p>
+    <div class="tl-scroll" id="tlScroll"><div class="tl" id="tl"></div></div>
+    <div class="legend">
+      <span><i style="background:#c4b5fd"></i>target utama S2</span>
+      <span><i style="background:#67e8f9"></i>target mendatang</span>
+      <span><i style="background:#6ee7b7"></i>tercapai</span>
+      <span><i style="background:#f472b6"></i>terlewat</span>
+    </div>
+    <p class="sub" id="tlUnsched"></p>
+    <div class="detail" id="tlDetail"></div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section class="card" aria-labelledby="pgTitle">
+    <div class="row">
+      <h2 id="pgTitle">🚀 Kesiapan Keseluruhan</h2>
+      <span class="pct" id="pct">0%</span>
+    </div>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="barWrap"><i id="bar"></i></div>
+    <p class="sub" id="pgSub"></p>
+  </section>
+
+  <div id="cats"></div>
+
+  <footer>
+    Data tersimpan otomatis di browser ini (LocalStorage).<br>
+    <button id="resetBtn" class="ghost">Reset semua data</button>
+  </footer>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const KEY = 's2-readiness-v1';
+  const $ = id => document.getElementById(id);
+  const uid = () => Math.random().toString(36).slice(2, 9);
+  const mk = (t, d = false, due = '') => ({ id: uid(), text: t, done: d, due });
+
+  function defaultTarget() {
+    const d = new Date(); d.setDate(d.getDate() + 90); d.setHours(23, 59, 0, 0);
+    return d.getTime();
+  }
+  function defaults() {
+    return {
+      vision: '',
+      target: defaultTarget(),
+      cats: [
+        { id: uid(), icon: '📝', name: 'Tes Terstandarisasi (IELTS/TOEFL/GRE)', tasks: [
+          mk('Tentukan jenis tes & skor minimum yang dibutuhkan'), mk('Daftar jadwal tes'),
+          mk('Latihan soal / tryout rutin'), mk('Ambil tes resmi'), mk('Kirim skor resmi ke kampus tujuan') ] },
+        { id: uid(), icon: '📄', name: 'Dokumen Inti', tasks: [
+          mk('Ijazah S1 (legalisir)'), mk('Transkrip nilai (legalisir)'),
+          mk('CV / Resume akademik'), mk('Paspor / KTP / dokumen identitas') ] },
+        { id: uid(), icon: '✍️', name: 'Esai & Rencana Riset', tasks: [
+          mk('Tentukan topik & bidang riset'), mk('Draf Statement of Purpose / Motivation Letter'),
+          mk('Draf research proposal'), mk('Review & revisi oleh orang lain'), mk('Final proofreading') ] },
+        { id: uid(), icon: '💌', name: 'Surat Rekomendasi (Dosen/Atasan)', tasks: [
+          mk('Pilih perekomendasi'), mk('Hubungi & kirim materi pendukung'),
+          mk('Follow-up sebelum tenggat'), mk('Konfirmasi surat terkirim') ] },
+        { id: uid(), icon: '💰', name: 'Finansial / Pendaftaran Beasiswa', tasks: [
+          mk('Riset beasiswa yang relevan'), mk('Cek syarat & tenggat tiap beasiswa'),
+          mk('Siapkan dokumen khusus beasiswa'), mk('Hitung estimasi biaya studi & hidup'), mk('Submit pendaftaran') ] }
+      ]
+    };
+  }
+
+  let state;
+  try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) { state = null; }
+  if (!state || !Array.isArray(state.cats)) state = defaults();
+  function autoSchedule() {
+    const D = 864e5, d0 = new Date(); d0.setHours(0, 0, 0, 0);
+    const span = state.target - d0.getTime();
+    if (!(span >= 7 * D)) return 0;
+    const FR = [[.05, .5], [.08, .45], [.2, .85], [.15, .75], [.3, .95]];
+    let n = 0;
+    state.cats.forEach((c, ci) => {
+      const fr = FR[ci] || [.1, .9], list = c.tasks.filter(t => !t.due), m = list.length;
+      list.forEach((t, j) => {
+        const f = m === 1 ? (fr[0] + fr[1]) / 2 : fr[0] + (fr[1] - fr[0]) * j / (m - 1);
+        const d = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + Math.round(f * span / D));
+        t.due = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        n++;
+      });
+    });
+    return n;
+  }
+  function ensure() {
+    state.birth = state.birth || '';
+    state.lifespan = state.lifespan || 80;
+    if (!state.autoDone) {
+      if (!state.cats.some(c => c.tasks.some(t => t.due))) autoSchedule();
+      state.autoDone = true;
+    }
+  }
+  ensure();
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+
+  /* ---------- Vision ---------- */
+  const PLACEHOLDER = 'Belum ada visi. Klik “Edit” dan tuliskan mengapa kamu ingin & harus menempuh S2 — ini bintang penunjuk arahmu saat lelah.';
+  function renderVision() {
+    const el = $('visionText');
+    el.textContent = state.vision.trim() || PLACEHOLDER;
+    el.classList.toggle('empty', !state.vision.trim());
+  }
+  $('visionEditBtn').onclick = () => {
+    $('visionInput').value = state.vision;
+    $('visionEditor').classList.remove('hidden'); $('visionText').classList.add('hidden');
+    $('visionEditBtn').classList.add('hidden'); $('visionInput').focus();
+  };
+  const closeVision = () => {
+    $('visionEditor').classList.add('hidden'); $('visionText').classList.remove('hidden');
+    $('visionEditBtn').classList.remove('hidden');
+  };
+  $('visionSave').onclick = () => { state.vision = $('visionInput').value; save(); renderVision(); closeVision(); };
+  $('visionCancel').onclick = closeVision;
+
+  /* ---------- Countdown ---------- */
+  const pad = n => String(n).padStart(2, '0');
+  function toLocalInput(ts) {
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function renderTargetLabel() {
+    $('targetLabel').textContent = 'Target: ' + new Date(state.target).toLocaleString('id-ID', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  function tick() {
+    let diff = state.target - Date.now();
+    const over = diff <= 0;
+    $('reached').classList.toggle('hidden', !over);
+    $('countGrid').classList.toggle('hidden', over);
+    if (over) return;
+    const s = Math.floor(diff / 1000);
+    $('cd-d').textContent = Math.floor(s / 86400);
+    $('cd-h').textContent = pad(Math.floor(s % 86400 / 3600));
+    $('cd-m').textContent = pad(Math.floor(s % 3600 / 60));
+    $('cd-s').textContent = pad(s % 60);
+  }
+  $('dateEditBtn').onclick = () => {
+    $('dateInput').value = toLocalInput(state.target);
+    $('dateEditor').classList.toggle('hidden');
+  };
+  $('dateSave').onclick = () => {
+    const t = new Date($('dateInput').value).getTime();
+    if (isNaN(t)) return;
+    state.target = t; save(); renderTargetLabel(); tick(); $('dateEditor').classList.add('hidden');
+    renderTimeline(); renderDetail();
+  };
+  $('dateCancel').onclick = () => $('dateEditor').classList.add('hidden');
+
+  /* ---------- Checklist ---------- */
+  function renderProgress() {
+    let total = 0, done = 0;
+    state.cats.forEach(c => c.tasks.forEach(t => { total++; if (t.done) done++; }));
+    const p = total ? Math.round(done / total * 100) : 0;
+    $('pct').textContent = p + '%';
+    $('bar').style.width = p + '%';
+    $('barWrap').setAttribute('aria-valuenow', p);
+    $('pgSub').textContent = total
+      ? `${done} dari ${total} tugas selesai` + (p === 100 ? ' — kamu siap! 🌟' : '')
+      : 'Belum ada tugas.';
+  }
+  function renderCats() {
+    const root = $('cats'); root.innerHTML = '';
+    state.cats.forEach(cat => {
+      const done = cat.tasks.filter(t => t.done).length, total = cat.tasks.length;
+      const sec = document.createElement('section'); sec.className = 'card';
+
+      const head = document.createElement('div'); head.className = 'cat-head';
+      const h3 = document.createElement('h3'); h3.textContent = `${cat.icon} ${cat.name}`;
+      const meta = document.createElement('span'); meta.className = 'cat-meta'; meta.textContent = `${done}/${total}`;
+      head.append(h3, meta);
+
+      const mini = document.createElement('div'); mini.className = 'mini';
+      const mi = document.createElement('i'); mi.style.width = (total ? done / total * 100 : 0) + '%';
+      mini.appendChild(mi);
+
+      const ul = document.createElement('ul');
+      if (!total) { const e = document.createElement('p'); e.className = 'empty-note'; e.textContent = 'Belum ada tugas di kategori ini.'; sec.append(head, mini, e); }
+      else sec.append(head, mini, ul);
+
+      cat.tasks.forEach(t => {
+        const li = document.createElement('li'); li.className = 'task' + (t.done ? ' done' : '');
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = t.done; cb.id = 't-' + t.id;
+        cb.onchange = () => { t.done = cb.checked; save(); renderAll(); };
+        const lb = document.createElement('label'); lb.htmlFor = cb.id; lb.textContent = t.text;
+        const del = document.createElement('button'); del.className = 'del'; del.title = 'Hapus tugas'; del.setAttribute('aria-label', 'Hapus tugas'); del.textContent = '✕';
+        del.onclick = () => { cat.tasks = cat.tasks.filter(x => x.id !== t.id); save(); renderAll(); };
+        const due = document.createElement('input'); due.type = 'date'; due.value = t.due || '';
+        due.className = 'due' + (t.due ? ' set' : '');
+        due.title = 'Tanggal target tugas'; due.setAttribute('aria-label', 'Tanggal target tugas');
+        if (t.due && !t.done && parseD(t.due) < startOfToday()) due.classList.add('late');
+        due.onchange = () => { t.due = due.value; save(); renderAll(); };
+        li.append(cb, lb, due, del); ul.appendChild(li);
+      });
+
+      const form = document.createElement('form'); form.className = 'add';
+      const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = 'Tambah tugas baru…'; inp.maxLength = 160;
+      const btn = document.createElement('button'); btn.className = 'primary'; btn.type = 'submit'; btn.textContent = '+ Tambah';
+      form.append(inp, btn);
+      form.onsubmit = e => {
+        e.preventDefault();
+        const v = inp.value.trim(); if (!v) return;
+        cat.tasks.push(mk(v)); save(); renderAll();
+        const again = root.querySelectorAll('.add input')[state.cats.indexOf(cat)]; if (again) again.focus();
+      };
+      sec.appendChild(form);
+      root.appendChild(sec);
+    });
+  }
+  function renderAll() { renderCats(); renderProgress(); refreshTargets(); }
+
+  $('resetBtn').onclick = () => {
+    if (confirm('Hapus semua data dan kembali ke pengaturan awal?')) {
+      state = defaults(); ensure(); selId = null; save(); renderVision(); renderTargetLabel(); tick(); renderAll();
+      renderTimeline(); renderDetail();
+    }
+  };
+
+  /* ---------- Targets: Timeline & Life Weeks ---------- */
+  const COLORS = { done: '#6ee7b7', upcoming: '#67e8f9', missed: '#f472b6', target: '#c4b5fd' };
+  const TYPE_LABEL = { done: 'Tercapai', upcoming: 'Mendatang', missed: 'Terlewat', target: 'Target utama S2' };
+  const DAY = 864e5, AX = 170;
+  let selId = null, tlFirst = true, tlNote = '';
+
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d).getTime(); };
+  const fmtD = ts => new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
+
+  function targets() {
+    const list = [], today = startOfToday();
+    state.cats.forEach(c => c.tasks.forEach(t => {
+      if (!t.due) return;
+      const ts = parseD(t.due);
+      list.push({ id: t.id, title: t.text, cat: c.name, icon: c.icon, ts, task: t,
+        status: t.done ? 'done' : (ts < today ? 'missed' : 'upcoming') });
+    }));
+    list.push({ id: '__target', title: 'Target pendaftaran / tes S2', cat: 'Target utama', icon: '🎯', ts: state.target, status: 'target', fixed: true });
+    return list.sort((a, b) => a.ts - b.ts);
+  }
+  function refreshTargets() { renderTimeline(); renderDetail(); }
+
+  function renderTimeline() {
+    const tl = $('tl'), sc = $('tlScroll'), prev = sc.scrollLeft;
+    tl.innerHTML = '';
+    const evs = targets(), now = Date.now(), vw = sc.clientWidth || 600;
+    const first = Math.min(evs[0].ts, now) - 10 * DAY;
+    const last = Math.max(evs[evs.length - 1].ts, now) + 14 * DAY;
+    const ppd = Math.max(6, Math.min(14, vw / ((last - first) / DAY)));
+    const x = ts => (ts - first) / DAY * ppd;
+    const W = Math.max(Math.ceil(x(last)), vw); tl.style.width = W + 'px';
+    const xn = x(now);
+
+    let d = new Date(first); d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    let firstTick = true;
+    for (; d.getTime() < last; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
+      const t = el('div', 'tick'); t.style.left = x(d.getTime()) + 'px';
+      const lb = d.toLocaleDateString('id-ID', { month: 'short' }) + (d.getMonth() === 0 || firstTick ? ' ' + d.getFullYear() : '');
+      firstTick = false; t.appendChild(el('span', null, lb)); tl.appendChild(t);
+    }
+    const a1 = el('div', 'axis past'); a1.style.left = '0'; a1.style.width = xn + 'px';
+    const a2 = el('div', 'axis future'); a2.style.left = xn + 'px'; a2.style.width = Math.max(0, W - xn) + 'px';
+    tl.append(a1, a2);
+    const nw = el('div', 'now'); nw.style.left = xn + 'px';
+    nw.appendChild(el('span', null, 'SEKARANG')); tl.appendChild(nw);
+
+    const lanes = [[118, 1], [196, 0], [76, 1], [238, 0], [34, 1], [280, 0]].map(a => ({ top: a[0], up: !!a[1], right: -1e9 }));
+    evs.forEach(e => {
+      const cx = x(e.ts);
+      let lane = lanes.find(l => l.right + 6 <= cx - 60);
+      if (!lane) lane = lanes.reduce((m, l) => l.right < m.right ? l : m, lanes[0]);
+      lane.right = cx + 60;
+      const w = el('div', 'ev' + (e.id === selId ? ' sel' : '')); w.style.left = cx + 'px'; w.style.color = COLORS[e.status]; w.title = e.title;
+      const stem = el('div', 'stem');
+      if (lane.up) { stem.style.top = (lane.top + 38) + 'px'; stem.style.height = (AX - lane.top - 38) + 'px'; }
+      else { stem.style.top = AX + 'px'; stem.style.height = (lane.top - AX) + 'px'; }
+      const lbl = el('div', 'lbl'); lbl.style.top = lane.top + 'px';
+      lbl.append(el('b', null, e.title), el('small', null, fmtD(e.ts)));
+      const st = el('button', 'star goal' + (e.id === '__target' ? ' big' : '')); st.type = 'button'; st.setAttribute('aria-label', e.title);
+      w.append(stem, lbl, st);
+      w.onclick = () => { selId = e.id; renderTimeline(); renderDetail(); };
+      tl.appendChild(w);
+    });
+
+    if (tlFirst) { sc.scrollLeft = Math.max(0, xn - vw * 0.25); tlFirst = false; }
+    else sc.scrollLeft = prev;
+
+    let open = 0;
+    state.cats.forEach(c => c.tasks.forEach(t => { if (!t.due && !t.done) open++; }));
+    $('tlUnsched').textContent = tlNote || (open ? `${open} tugas belum punya tanggal — isi di checklist atau tekan “Susun jadwal otomatis”.` : '');
+    tlNote = '';
+  }
+
+  function renderDetail() {
+    const box = $('tlDetail'); box.innerHTML = '';
+    const e = targets().find(v => v.id === selId);
+    if (!e) { const p = el('p', 'sub', 'Ketuk sebuah bintang untuk melihat detail target, menandainya selesai, atau mengubah tanggalnya.'); p.style.margin = '0'; box.appendChild(p); return; }
+    const chip = el('span', 'chip', TYPE_LABEL[e.status]); chip.style.color = COLORS[e.status];
+    const h = el('h3', null, e.icon + ' ' + e.title); h.style.margin = '10px 0 2px';
+    const meta = el('div', 'sub', e.cat); meta.style.margin = '0';
+    const dd = Math.round((e.ts - startOfToday()) / DAY);
+    let line = fmtD(e.ts) + ' · ' + (dd === 0 ? 'hari ini' : dd > 0 ? dd + ' hari lagi' : 'terlewat ' + (-dd) + ' hari');
+    const d = el('div', 'sub mono', line); d.style.margin = '2px 0 0';
+    box.append(chip, h, meta, d);
+    const act = el('div', 'actions'); act.style.flexWrap = 'wrap'; act.style.alignItems = 'center';
+    if (e.fixed) {
+      const p = el('span', 'sub', 'Ubah tanggalnya lewat kartu Hitung Mundur di atas.'); p.style.margin = '0'; act.appendChild(p);
+    } else {
+      const t = e.task;
+      const b = el('button', 'primary', t.done ? '↺ Batalkan selesai' : '✓ Tandai selesai');
+      b.onclick = () => { t.done = !t.done; save(); renderAll(); };
+      const di = el('input', 'due set'); di.type = 'date'; di.value = t.due; di.setAttribute('aria-label', 'Ubah tanggal');
+      di.onchange = () => { if (di.value) { t.due = di.value; save(); renderAll(); } };
+      const rm = el('button', null, '✕ Hapus tanggal');
+      rm.onclick = () => { t.due = ''; selId = null; save(); renderAll(); };
+      act.append(b, di, rm);
+    }
+    box.appendChild(act);
+  }
+
+  $('autoBtn').onclick = () => {
+    const n = autoSchedule(); save();
+    tlNote = n ? `${n} tugas dijadwalkan otomatis di antara hari ini dan target S2. Sesuaikan tanggalnya kapan saja.`
+               : 'Semua tugas sudah punya tanggal, atau target S2 kurang dari 7 hari lagi.';
+    renderAll();
+  };
+
+  renderVision(); renderTargetLabel(); tick(); renderAll();
+  save();
+  setInterval(tick, 1000);
+
+  /* ---------- Starfield ---------- */
+  const cv = $('stars'), ctx = cv.getContext('2d');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W, H, stars = [], shoot = null, raf;
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const n = Math.min(260, Math.floor(W * H / 6500));
+    stars = Array.from({ length: n }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      r: Math.random() * 1.3 + .2, a: Math.random() * .6 + .3,
+      sp: Math.random() * .02 + .005, ph: Math.random() * 6.28,
+      hue: Math.random() < .2 ? 265 : Math.random() < .5 ? 215 : 45
+    }));
+  }
+  function frame(t) {
+    ctx.clearRect(0, 0, W, H);
+    for (const s of stars) {
+      const tw = reduce ? 1 : .55 + .45 * Math.sin(t * s.sp + s.ph);
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.283);
+      ctx.fillStyle = `hsla(${s.hue},80%,85%,${s.a * tw})`; ctx.fill();
+    }
+    if (!reduce) {
+      if (!shoot && Math.random() < .0025) {
+        shoot = { x: Math.random() * W * .8, y: Math.random() * H * .4, vx: 7 + Math.random() * 4, vy: 3 + Math.random() * 2, life: 1 };
+      }
+      if (shoot) {
+        const g = ctx.createLinearGradient(shoot.x, shoot.y, shoot.x - shoot.vx * 9, shoot.y - shoot.vy * 9);
+        g.addColorStop(0, `rgba(255,255,255,${shoot.life})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.strokeStyle = g; ctx.lineWidth = 1.6; ctx.beginPath();
+        ctx.moveTo(shoot.x, shoot.y); ctx.lineTo(shoot.x - shoot.vx * 9, shoot.y - shoot.vy * 9); ctx.stroke();
+        shoot.x += shoot.vx; shoot.y += shoot.vy; shoot.life -= .018;
+        if (shoot.life <= 0 || shoot.x > W + 50 || shoot.y > H + 50) shoot = null;
+      }
+      raf = requestAnimationFrame(frame);
+    }
+  }
+  addEventListener('resize', resize);
+  document.addEventListener('visibilitychange', () => {
+    if (reduce) return;
+    if (document.hidden) cancelAnimationFrame(raf); else raf = requestAnimationFrame(frame);
+  });
+  resize(); raf = requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
